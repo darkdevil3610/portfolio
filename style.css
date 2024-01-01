@@ -956,21 +956,7 @@ section {
   background-size: cover;
   filter: invert(93%) sepia(32%) saturate(1390%) hue-rotate(338deg) brightness(109%) contrast(102%);
 }
-.social:nth-of-type(4) {
-  background: url("./icons/Artstation.png") no-repeat;
-  background-size: cover;
-  filter: invert(85%) sepia(61%) saturate(1211%) hue-rotate(68deg) brightness(102%) contrast(104%);
-}
-.social:nth-of-type(5) {
-  background: url("./icons/icon-youtube-64.png") no-repeat;
-  background-size: cover;
-  filter: invert(68%) sepia(66%) saturate(1835%) hue-rotate(152deg) brightness(101%) contrast(104%);
-}
-.social:nth-of-type(6) {
-  background: url("./icons/icon-facebook-64.png") no-repeat;
-  background-size: cover;
-  filter: invert(16%) sepia(99%) saturate(6552%) hue-rotate(260deg) brightness(118%) contrast(121%);
-}
+
 .social:hover {
   filter: invert(48%) sepia(64%) saturate(995%) hue-rotate(17deg)
     brightness(102%) contrast(101%);
