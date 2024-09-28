@@ -1,5 +1,5 @@
 # PORTFOLIO
 
-https://darkdevil3610.github.io/portfolio/
+https://gourav.is-a.dev/portfolio/
 
 Updated January 2024
