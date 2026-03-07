@@ -222,17 +222,32 @@ nav {
   background: goldenrod;
   position: absolute;
   top: 55px;
-  translate: -56px 0;
+  translate: -100px 0;
   transition: width 0.5s ease-out;
 }
 #navLink4.is-on::after {
+  width: 102px;
+}
+
+#navLink5::after {
+  content: "";
+  height: 1px;
+  width: 0;
+  background: goldenrod;
+  position: absolute;
+  top: 55px;
+  translate: -56px 0;
+  transition: width 0.5s ease-out;
+}
+#navLink5.is-on::after {
   width: 57px;
 }
 
-#navLink5.is-on::before,
 #navLink6.is-on::before,
 #navLink7.is-on::before,
-#navLink8.is-on::before {
+#navLink8.is-on::before,
+#navLink9.is-on::before,
+#navLink10.is-on::before {
   opacity: 1;
 }
 
@@ -318,7 +333,7 @@ section {
 #section4 {
   justify-content: flex-start;
 }
-#section5 {
+#section6 {
   align-items: center;
   justify-content: flex-start;
   text-align: center;
@@ -787,6 +802,34 @@ section {
   width: 1px;
 }
 
+.achievementGrid {
+  width: 100%;
+  margin: 3vh 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.achievementCard {
+  min-height: 260px;
+  border: rgba(116, 72, 21, 0.726) solid 1px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 16px rgba(92, 0, 128, 0.5);
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.certificateImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .sec5Tit {
   display: flex;
   flex-wrap: wrap;
@@ -1110,6 +1153,13 @@ footer {
 }
 
 @media only screen and (max-width: 820px) {
+  .achievementGrid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .achievementCard {
+    min-height: 0;
+  }
   .sec2Part {
     max-width: 70vw;
   }
@@ -1151,6 +1201,9 @@ footer {
   section {
     margin: 0 10vw 0 10vw;
   }
+  #section5 {
+    justify-content: flex-start;
+  }
   #section2 {
     justify-content: flex-start;
   }
@@ -1185,6 +1238,15 @@ footer {
   }
   .secPortFrame {
     margin: 1vh 0 2vh 0;
+  }
+  .achievementGrid {
+    margin-top: 2vh;
+  }
+  .achievementCard {
+    padding: 16px;
+  }
+  .certificateImage {
+    object-fit: contain;
   }
   .project {
     width: 80vw;

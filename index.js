@@ -578,6 +578,7 @@ document.querySelectorAll("a").forEach((each) => {
 let sections = document.querySelectorAll("section");
 let staticSectionNumber = 1;
 function highLightNavLink(number) {
+  const desktopNavCount = 5;
   navLinks.forEach((each) => {
     each.style.color = "beige";
     each.style.fontStyle = "normal";
@@ -587,13 +588,22 @@ function highLightNavLink(number) {
     each.style.backgroundColor = "beige";
   });
   if (number > 1) {
-    navLinks[number - 2].style.color = "goldenrod";
-    navLinks[number - 2].style.fontStyle = "italic";
-    navLinks[number - 2].classList.add("is-on");
-    navLinks[number + 2].style.color = "goldenrod";
-    navLinks[number + 2].style.fontStyle = "italic";
-    navLinks[number + 2].classList.add("is-on");
-    hamburgerLine[number-2].style.backgroundColor = "goldenrod";
+    const desktopIndex = number - 2;
+    const mobileIndex = desktopIndex + desktopNavCount;
+    if (navLinks[desktopIndex]) {
+      navLinks[desktopIndex].style.color = "goldenrod";
+      navLinks[desktopIndex].style.fontStyle = "italic";
+      navLinks[desktopIndex].classList.add("is-on");
+    }
+    if (navLinks[mobileIndex]) {
+      navLinks[mobileIndex].style.color = "goldenrod";
+      navLinks[mobileIndex].style.fontStyle = "italic";
+      navLinks[mobileIndex].classList.add("is-on");
+    }
+    const lineIndex = Math.min(desktopIndex, hamburgerLine.length - 1);
+    if (lineIndex >= 0) {
+      hamburgerLine[lineIndex].style.backgroundColor = "goldenrod";
+    }
   }
 }
 //highlight hamburger line
@@ -602,12 +612,15 @@ function highLightHamburger(number) {
     each.style.backgroundColor = "beige";
   });
   if (number > 1) {
-    hamburgerLine[number-2].style.backgroundColor = "goldenrod";
+    const lineIndex = Math.min(number - 2, hamburgerLine.length - 1);
+    if (lineIndex >= 0) {
+      hamburgerLine[lineIndex].style.backgroundColor = "goldenrod";
+    }
   }
 }
 //change footer according to section
 function changeFooter(setting) {
-  if (setting === 5) {
+  if (setting === 6) {
     document.querySelector("footer").style.justifyContent = "space-between";
     document.querySelector(".backToTop").style.display = "block";
     document.querySelector(".copyright").style.display = "flex";
@@ -720,72 +733,66 @@ const animate = () => {
 
   //Check current section on screen
   let currentSection = document.querySelector(".is-visible");
-  if (currentSection === sections[0]) {
-    const sectionNumber = 1;
+  const sectionConfigs = [
+    {
+      stars: null,
+      top: yellow,
+      back: red,
+      rect: purple,
+      cam: [-0.3, 0, 5],
+    },
+    {
+      stars: black,
+      top: green,
+      back: yellow,
+      rect: purple,
+      cam: [-0.55, 0, 5],
+    },
+    {
+      stars: black,
+      top: cyan,
+      back: purple,
+      rect: blue,
+      cam: [-0.1, 0, 5],
+    },
+    {
+      stars: black,
+      top: red,
+      back: purple,
+      rect: blue,
+      cam: [-0.1, 0, 5],
+    },
+    {
+      stars: 0x101010,
+      top: yellow,
+      back: cyan,
+      rect: purple,
+      cam: [-0.2, 0, 5],
+    },
+    {
+      stars: 0x545454,
+      top: black,
+      back: black,
+      rect: black,
+      cam: [0, -4.5, 10],
+    },
+  ];
+
+  const activeSectionIndex = sections ? Array.from(sections).indexOf(currentSection) : -1;
+  if (activeSectionIndex >= 0) {
+    const sectionNumber = activeSectionIndex + 1;
     if (sectionNumber !== staticSectionNumber) {
+      const config = sectionConfigs[activeSectionIndex];
       highLightNavLink(sectionNumber);
       highLightHamburger(sectionNumber);
       changeFooter(sectionNumber);
-      lightTopColor.setHex(yellow);
-      lightBackColor.setHex(red);
-      rectLightColor.setHex(purple);
-      updateCamPos.set(-0.3, 0, 5);
-      staticSectionNumber = sectionNumber;
-    }
-  }
-  if (currentSection === sections[1]) {
-    const sectionNumber = 2;
-    if (sectionNumber !== staticSectionNumber) {
-      highLightNavLink(sectionNumber);
-      highLightHamburger(sectionNumber);
-      changeFooter(sectionNumber);
-      toggleStars(black);
-      lightTopColor.setHex(green);
-      lightBackColor.setHex(yellow);
-      rectLightColor.setHex(purple);
-      updateCamPos.set(-0.55, 0, 5);
-      staticSectionNumber = sectionNumber;
-    }
-  }
-  if (currentSection === sections[2]) {
-    const sectionNumber = 3;
-    if (sectionNumber !== staticSectionNumber) {
-      highLightNavLink(sectionNumber);
-      highLightHamburger(sectionNumber);
-      changeFooter(sectionNumber);
-      toggleStars(black);
-      lightTopColor.setHex(cyan);
-      lightBackColor.setHex(purple);
-      rectLightColor.setHex(blue);
-      updateCamPos.set(-0.1, 0, 5);
-      staticSectionNumber = sectionNumber;
-    }
-  }
-  if (currentSection === sections[3]) {
-    const sectionNumber = 4;
-    if (sectionNumber !== staticSectionNumber) {
-      highLightNavLink(sectionNumber);
-      highLightHamburger(sectionNumber);
-      changeFooter(sectionNumber);
-      toggleStars(black);
-      lightTopColor.setHex(red);
-      lightBackColor.setHex(purple);
-      rectLightColor.setHex(blue);
-      updateCamPos.set(-0.1, 0, 5);
-      staticSectionNumber = sectionNumber;
-    }
-  }
-  if (currentSection === sections[4]) {
-    const sectionNumber = 5;
-    if (sectionNumber !== staticSectionNumber) {
-      highLightNavLink(sectionNumber);
-      highLightHamburger(sectionNumber);
-      changeFooter(sectionNumber);
-      toggleStars(0x545454);
-      lightTopColor.setHex(black);
-      lightBackColor.setHex(black);
-      rectLightColor.setHex(black);
-      updateCamPos.set(0, -4.5, 10);
+      if (config.stars !== null) {
+        toggleStars(config.stars);
+      }
+      lightTopColor.setHex(config.top);
+      lightBackColor.setHex(config.back);
+      rectLightColor.setHex(config.rect);
+      updateCamPos.set(config.cam[0], config.cam[1], config.cam[2]);
       staticSectionNumber = sectionNumber;
     }
   }
