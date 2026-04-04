@@ -1,5 +1,5 @@
-import * as THREE from "https://cdn.skypack.dev/three@0.148.0";
-import openSimplexNoise from 'https://cdn.skypack.dev/open-simplex-noise';
+import * as THREE from "./vendor/three.module.js";
+import { makeNoise4D } from "./vendor/open-simplex-noise.mjs";
 
 //VARIABLES
 const sizes = {
@@ -144,7 +144,7 @@ function generateParticle() {
 //SCENE2 OBJECTS
 //Globe
 let wave = new THREE.Vector3();
-let noise = openSimplexNoise.makeNoise4D(Date.now());
+let noise = makeNoise4D(Date.now());
 let clock = new THREE.Clock();
 
 const earthGroup = new THREE.Object3D();
