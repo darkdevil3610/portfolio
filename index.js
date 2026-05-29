@@ -87,6 +87,8 @@ renderer.setClearAlpha(0);
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.shadowMap.needsUpdate = true;
+// Ensure correct color space for textures
+renderer.outputEncoding = THREE.sRGBEncoding;
 
 //SCENE1 OBJECTS
 //Space size
@@ -239,11 +241,12 @@ function generateAirPlane() {
     fog: false,
   });
   const flagText = new THREE.TextureLoader().load("./images/Flag_of_India.png");
-  const matFlag = new THREE.MeshStandardMaterial({
+  // Use sRGB encoding for correct color rendering
+  flagText.encoding = THREE.sRGBEncoding;
+  // Use an unlit material so the flag texture shows true colors
+  const matFlag = new THREE.MeshBasicMaterial({
     map: flagText,
-    roughness: 0.5,
-    metalness: 1,
-    flatShading: true,
+    side: THREE.DoubleSide,
     fog: false,
   });
 
