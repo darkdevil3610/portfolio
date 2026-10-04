@@ -724,6 +724,13 @@ section {
   border: yellow solid 0.8px;
   box-shadow: 0px 0 10px 0 rgb(156, 101, 0);
 }
+.cvButton {
+  width: fit-content;
+  margin: 6px 0 18px;
+}
+.cvButton .seemore {
+  font-size: 24px;
+}
 
 .leftright {
   position: absolute;
@@ -1276,6 +1283,9 @@ footer {
   }
   .seemore {
     font-size: 16px;
+  }
+  .cvButton .seemore {
+    font-size: 18px;
   }
   .leftright {
     width: 40px;
