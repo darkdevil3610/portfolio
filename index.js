@@ -331,22 +331,7 @@ function onWindowResize() {
   renderer.setSize(sizes.width, sizes.height);
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
-  //Refresh middle project on screen
-  document.querySelectorAll("#webProject")[currentWebSlide-1].classList.remove("is-in");
-  document.querySelectorAll("#dotWeb")[currentWebSlide-1].classList.remove("is-at");
-  document.querySelectorAll("#gameProject")[currentGameSlide-1].classList.remove("is-in");
-  document.querySelectorAll("#dotGame")[currentGameSlide-1].classList.remove("is-at");
-  webSlidePos = 0;
-  currentWebSlide = Math.ceil(totalWebSlide / 2);
-  gameSlidePos = 0;
-  currentGameSlide = Math.ceil(totalGameSlide / 2);
-  //Update project size
-  projectResize();
-  //Refresh first image on screen
-  document.querySelectorAll(".imageWrap").forEach((each) => each.style.translate = 0);
-  document.querySelectorAll(".dotImg").forEach((each) => each.classList.remove("is-focus"));
-  document.querySelectorAll(".dotGroup").forEach((each) => each.children[0].classList.add("is-focus"));
-  document.querySelectorAll(".projectSecret").forEach((each) => each.style.width = "1px");
+  scheduleActiveSectionUpdate();
 }
 window.addEventListener("resize", onWindowResize, false);
 
@@ -373,166 +358,121 @@ function onTouchMove(event) {
 }
 window.addEventListener("touchmove", onTouchMove, false);
 
-//UPDATE ACTIVE SECTION ON SCREEN
-let options = {rootMargin: "0px", threshold: 0.75};
-const callback = (entries) => {
-  entries.forEach((entry) => {
-    const { target } = entry;
-    if (entry.intersectionRatio >= 0.75) {
-      target.classList.add("is-visible");
-    } else {
-      target.classList.remove("is-visible");
+//REVEAL SECTIONS ONCE
+const main = document.querySelector("main");
+const sections = main.querySelectorAll("section");
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { root: main, rootMargin: "0px", threshold: 0 });
+  sections.forEach((section) => observer.observe(section));
+} else {
+  sections.forEach((section) => section.classList.add("is-visible"));
+}
+
+//UPDATE ACTIVE SECTION AT THE VIEWPORT READING LINE
+let activeSectionIndex = 0;
+let activeSectionFrame = null;
+function updateActiveSection() {
+  activeSectionFrame = null;
+  const readingLine = main.getBoundingClientRect().top + main.clientHeight * 0.35;
+  activeSectionIndex = 0;
+  sections.forEach((section, index) => {
+    if (section.getBoundingClientRect().top <= readingLine) {
+      activeSectionIndex = index;
     }
   });
-};
-const observer = new IntersectionObserver(callback, options);
-document.querySelectorAll("section").forEach((section) => {
-  observer.observe(section);
-});
+}
+function scheduleActiveSectionUpdate() {
+  if (activeSectionFrame === null) {
+    activeSectionFrame = requestAnimationFrame(updateActiveSection);
+  }
+}
+main.addEventListener("scroll", scheduleActiveSectionUpdate, { passive: true });
+window.addEventListener("hashchange", scheduleActiveSectionUpdate);
+window.addEventListener("load", scheduleActiveSectionUpdate);
+window.addEventListener("pageshow", scheduleActiveSectionUpdate);
 
 //EXPAND NAVBAR HAMBURGER
-const hamburgerLine = document.querySelectorAll(".line");
-document
-  .querySelector(".hamburger")
-  .addEventListener("click", function(event) {
-    if (this.classList.contains("is-active")) {
-      this.classList.remove("is-active");
-      document.querySelector(".subMenu").style.display = "none";
-    } else {
-      this.classList.add("is-active");
-      document.querySelector(".subMenu").style.display = "flex";
-    }
+const hamburger = document.querySelector(".hamburger");
+const subMenu = document.querySelector(".subMenu");
+const hamburgerLine = hamburger.querySelectorAll(".line");
+function setMenuOpen(open) {
+  hamburger.classList.toggle("is-active", open);
+  hamburger.setAttribute("aria-expanded", String(open));
+  subMenu.style.display = open ? "flex" : "";
+}
+hamburger.addEventListener("click", function() {
+  setMenuOpen(!this.classList.contains("is-active"));
 });
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && hamburger.classList.contains("is-active")) {
+    setMenuOpen(false);
+    hamburger.focus();
+  }
+});
+window.matchMedia("(max-width: 1000px)").addEventListener("change", (event) => {
+  if (!event.matches) {
+    setMenuOpen(false);
+  }
+});
+setMenuOpen(false);
 
 //COLLAPSE SUBMENU ON CHOOSE
 const navLinks = document.querySelectorAll(".navEach");
 navLinks.forEach((each) => {
-  each.addEventListener("click", function(event) {
-    if (document.querySelector(".subMenu").style.display === "flex") {
-      document.querySelector(".subMenu").style.display = "none";
-      document.querySelector(".hamburger").classList.remove("is-active");
-    } 
-  })
-})
-
-//WEB SLIDE
-const totalWebSlide = document.querySelectorAll("#webProject").length;
-let webSlidePos = 0;
-let currentWebSlide = Math.ceil(totalWebSlide / 2);
-//Next web
-document
-  .querySelector("#nextWebButton")
-  .addEventListener("click", function(event) {
-    const whoosh = new Audio("./audios/Whoosh.mp3");
-    whoosh.play();
-    document.querySelectorAll("#webProject")[currentWebSlide-1].classList.remove("is-in");
-    document.querySelectorAll("#dotWeb")[currentWebSlide-1].classList.remove("is-at");
-    if (currentWebSlide === totalWebSlide) {
-      webSlidePos = -(webSlidePos);
-      currentWebSlide = 1;
-    } else {
-      webSlidePos = webSlidePos - document.querySelector("#webWrapper").getBoundingClientRect().width / totalWebSlide;
-      currentWebSlide = currentWebSlide + 1;
-    }
-});
-//Previous web
-document
-  .querySelector("#prevWebButton")
-  .addEventListener("click", function(event) {
-    const whoosh = new Audio("./audios/Whoosh.mp3");
-    whoosh.play();
-    document.querySelectorAll("#webProject")[currentWebSlide-1].classList.remove("is-in");
-    document.querySelectorAll("#dotWeb")[currentWebSlide-1].classList.remove("is-at");
-    if (currentWebSlide === 1) {
-      webSlidePos = -(webSlidePos);
-      currentWebSlide = totalWebSlide;
-    } else {
-      webSlidePos = document.querySelector("#webWrapper").getBoundingClientRect().width / totalWebSlide + webSlidePos;
-      currentWebSlide = currentWebSlide - 1;
-    }
+  each.addEventListener("click", () => setMenuOpen(false));
 });
 
-//GAME SLIDE
-const totalGameSlide = document.querySelectorAll("#gameProject").length;
-let gameSlidePos = 0;
-let currentGameSlide = Math.ceil(totalGameSlide / 2);
-//Next game
-document
-  .querySelector("#nextGameButton")
-  .addEventListener("click", function(event) {
+//IMAGE GALLERIES
+document.querySelectorAll(".projectGallery").forEach((gallery) => {
+  const imageWrap = gallery.querySelector(".imageWrap");
+  const pictures = gallery.querySelectorAll(".picture");
+  const controls = gallery.querySelector(".imgIndex");
+  const imageCount = gallery.querySelector(".imageCount");
+  const prevButton = gallery.querySelector(".prevImg");
+  const nextButton = gallery.querySelector(".nextImg");
+  if (pictures.length < 2 || !imageWrap || !controls || !imageCount || !prevButton || !nextButton) {
+    return;
+  }
+  let currentImage = 0;
+  function updateImage() {
+    imageWrap.style.transform = `translateX(-${currentImage * 100}%)`;
+    imageCount.textContent = `${currentImage + 1} / ${pictures.length}`;
+    pictures.forEach((picture, index) => {
+      if (index === currentImage) {
+        picture.removeAttribute("aria-hidden");
+      } else {
+        picture.setAttribute("aria-hidden", "true");
+      }
+    });
+  }
+  function changeImage(direction) {
+    currentImage = (currentImage + direction + pictures.length) % pictures.length;
+    updateImage();
     const whoosh = new Audio("./audios/Whoosh.mp3");
     whoosh.play();
-    document.querySelectorAll("#gameProject")[currentGameSlide-1].classList.remove("is-in");
-    document.querySelectorAll("#dotGame")[currentGameSlide-1].classList.remove("is-at");
-    if (currentGameSlide === totalGameSlide) {
-      gameSlidePos = -(gameSlidePos);
-      currentGameSlide = 1;
-    } else {
-      gameSlidePos = gameSlidePos - document.querySelector("#gameWrapper").getBoundingClientRect().width / totalGameSlide;
-      currentGameSlide = currentGameSlide + 1;
+  }
+  prevButton.addEventListener("click", () => changeImage(-1));
+  nextButton.addEventListener("click", () => changeImage(1));
+  gallery.addEventListener("keydown", (event) => {
+    if (event.target !== prevButton && event.target !== nextButton) {
+      return;
     }
-});
-//Previous game
-document
-  .querySelector("#prevGameButton")
-  .addEventListener("click", function(event) {
-    const whoosh = new Audio("./audios/Whoosh.mp3");
-    whoosh.play();
-    document.querySelectorAll("#gameProject")[currentGameSlide-1].classList.remove("is-in");
-    document.querySelectorAll("#dotGame")[currentGameSlide-1].classList.remove("is-at");
-    if (currentGameSlide === 1) {
-      gameSlidePos = -(gameSlidePos);
-      currentGameSlide = totalGameSlide;
-    } else {
-      gameSlidePos = document.querySelector("#gameWrapper").getBoundingClientRect().width / totalGameSlide + gameSlidePos;
-      currentGameSlide = currentGameSlide - 1;
-    }
-});
-
-//IMAGE SLIDE
-//Next image
-document.querySelectorAll("#nextImg").forEach((each) => {
-  each.addEventListener("click", function(event) {
-    const whoosh = new Audio("./audios/Whoosh.mp3");
-    whoosh.play();
-    const amount = this.closest(".project").children[2].children[1].children.length;
-    const currentImage = this.closest(".project").children[3].getBoundingClientRect().width;
-    if (currentImage < amount) {
-      const step = this.closest(".project").children[1].getBoundingClientRect().width * currentImage;
-      this.closest(".project").children[1].children[0].style.translate = "-" + step + "px";
-      this.closest(".project").children[2].children[1].children[currentImage-1].classList.remove("is-focus");
-      this.closest(".project").children[2].children[1].children[currentImage].classList.add("is-focus");
-      this.closest(".project").children[3].style.width = (currentImage + 1) + "px";
-    } else {
-      this.closest(".project").children[1].children[0].style.translate = 0;
-      this.closest(".project").children[2].children[1].children[currentImage-1].classList.remove("is-focus");
-      this.closest(".project").children[2].children[1].children[0].classList.add("is-focus");
-      this.closest(".project").children[3].style.width = "1px";
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      changeImage(event.key === "ArrowLeft" ? -1 : 1);
     }
   });
-})
-//Previous image
-document.querySelectorAll("#prevImg").forEach((each) => {
-  each.addEventListener("click", function(event) {
-    const whoosh = new Audio("./audios/Whoosh.mp3");
-    whoosh.play();
-    const amount = this.closest(".project").children[2].children[1].children.length;
-    const currentImage = this.closest(".project").children[3].getBoundingClientRect().width;
-    if (currentImage > 1) {
-      const step = this.closest(".project").children[1].getBoundingClientRect().width * (currentImage - 2);
-      this.closest(".project").children[1].children[0].style.translate = "-" + step + "px";
-      this.closest(".project").children[2].children[1].children[currentImage-1].classList.remove("is-focus");
-      this.closest(".project").children[2].children[1].children[currentImage-2].classList.add("is-focus");
-      this.closest(".project").children[3].style.width = (currentImage - 1) + "px";
-    } else {
-      const step = this.closest(".project").children[1].getBoundingClientRect().width * (amount - 1);
-      this.closest(".project").children[1].children[0].style.translate = "-" + step + "px";
-      this.closest(".project").children[2].children[1].children[currentImage-1].classList.remove("is-focus");
-      this.closest(".project").children[2].children[1].children[amount-1].classList.add("is-focus");
-      this.closest(".project").children[3].style.width = amount + "px";
-    }
-  });
-})
+  updateImage();
+  gallery.classList.add("is-enhanced");
+  controls.hidden = false;
+});
 
 //BUTTON BACK TO TOP
 document
@@ -578,8 +518,7 @@ document.querySelectorAll("a").forEach((each) => {
 
 //FUNCTIONS FOR ANIMATION
 //highlight navlink according to section
-let sections = document.querySelectorAll("section");
-let staticSectionNumber = 1;
+let staticSectionNumber = 0;
 function highLightNavLink(number) {
   const desktopNavCount = 5;
   navLinks.forEach((each) => {
@@ -646,30 +585,6 @@ function toggleStars(color) {
     each.material.color.setHex(color);
   })
 }
-//Update project size according to orientation
-function projectResize() {
-    if (window.innerWidth > 820) {
-      if ((window.innerHeight / window.innerWidth) >= 0.9) {
-        document.querySelectorAll(".project").forEach((each) => {
-          each.style.width = "65vw";
-        })
-        document.querySelector("#prevWebButton").style.transform = "translateX(0)";
-        document.querySelector("#nextWebButton").style.transform = "translateX(0)";
-        document.querySelector("#prevGameButton").style.transform = "translateX(0)";
-        document.querySelector("#nextGameButton").style.transform = "translateX(0)";
-        document.querySelectorAll(".picture").forEach((each) => each.style.width = "65vw");
-      } else {
-        document.querySelectorAll(".project").forEach((each) => {
-          each.style.width = "30vw";
-        })
-        document.querySelector("#prevWebButton").style.transform = "translateX(calc(20vw - 30px))";
-        document.querySelector("#nextWebButton").style.transform = "translateX(calc(-20vw + 30px))";
-        document.querySelector("#prevGameButton").style.transform = "translateX(calc(20vw - 30px))";
-        document.querySelector("#nextGameButton").style.transform = "translateX(calc(-20vw + 30px))";
-        document.querySelectorAll(".picture").forEach((each) => each.style.width = "30vw");
-      }
-    }
-}
 
 
 //ANIMATION
@@ -734,8 +649,7 @@ const animate = () => {
   //Move airplane follow mouse
   airPlaneGroup.position.lerp(airPlaneNewPos, 0.1);
 
-  //Check current section on screen
-  let currentSection = document.querySelector(".is-visible");
+  //Apply the tracked section to the scene
   const sectionConfigs = [
     {
       stars: null,
@@ -781,8 +695,7 @@ const animate = () => {
     },
   ];
 
-  const activeSectionIndex = sections ? Array.from(sections).indexOf(currentSection) : -1;
-  if (activeSectionIndex >= 0) {
+  if (activeSectionIndex >= 0 && activeSectionIndex < sectionConfigs.length) {
     const sectionNumber = activeSectionIndex + 1;
     if (sectionNumber !== staticSectionNumber) {
       const config = sectionConfigs[activeSectionIndex];
@@ -801,23 +714,13 @@ const animate = () => {
   }
 
   //Update hamburger arrow
-  if (document.querySelector(".subMenu").style.display === "flex") {
+  if (hamburger.classList.contains("is-active")) {
     hamburgerLine[0].style.backgroundColor = "goldenrod";
     hamburgerLine[3].style.backgroundColor = "goldenrod";
   } else {
     highLightHamburger(staticSectionNumber);
   }
 
-  //Update web project slide
-  document.querySelector("#webWrapper").style.translate = webSlidePos + "px";
-  document.querySelectorAll("#dotWeb")[currentWebSlide-1].classList.add("is-at");
-  document.querySelectorAll("#webProject")[currentWebSlide-1].classList.add("is-in");
-
-  //Update game project slide
-  document.querySelector("#gameWrapper").style.translate = gameSlidePos + "px";
-  document.querySelectorAll("#dotGame")[currentGameSlide-1].classList.add("is-at");
-  document.querySelectorAll("#gameProject")[currentGameSlide-1].classList.add("is-in");
-  
   //Update screen
   camera.position.lerp(updateCamPos, 0.05);
   lightTop.color.lerp(lightTopColor, 0.05);
@@ -828,12 +731,11 @@ const animate = () => {
   requestAnimationFrame(animate);
 };
 
-window.scrollTo({ top: 0, behavior: "smooth" });
 Array(30).fill().forEach(generateCube);
 Array(200).fill().forEach(generateParticle);
 generateEarth();
 Array(60).fill().forEach(generateCloud);
 Array(80).fill().forEach(generateStar);
 generateAirPlane();
-projectResize()
+updateActiveSection();
 animate();

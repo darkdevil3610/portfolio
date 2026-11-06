@@ -30,7 +30,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./icons/favicon/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" type="text/css" href="./style.css" />
+  <link rel="stylesheet" type="text/css" href="./style.css?v=20261106" />
   <link
     href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300&family=Playfair+Display&family=Roboto+Slab&display=swap"
     rel="stylesheet" />
@@ -63,19 +63,20 @@
       <a href="#section6" class="navEach" id="navLink5">Contact</a>
     </div>
     <div class="navSmall">
-      <div class="hamburger">
+      <button class="hamburger" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="mobile-navigation">
         <span class="line"></span>
         <span class="line"></span>
         <span class="line"></span>
         <span class="line"></span>
-      </div>
-      <div class="subMenu">
+      </button>
+      <div class="subMenu" id="mobile-navigation">
         <a href="#section2" class="navEach" id="navLink6">About</a>
         <a href="#section3" class="navEach" id="navLink7">Web</a>
         <a href="#section4" class="navEach" id="navLink8">Projects</a>
         <a href="#section5" class="navEach" id="navLink9">Achievements</a>
         <a href="#section6" class="navEach" id="navLink10">Contact</a>
       </div>
+    </div>
   </nav>
   <main>
     <section id="section1">
@@ -135,149 +136,124 @@
         <span class="next"></span>
       </a>
     </section>
-    <section id="section3">
-      <div class="secPortTit" id="content1">Recent Web Projects</div>
-      <div class="secPortDes" id="content2">Take a look at what I have built.</div>
-      <div class="secPortFrame" id="content3">
-        <button class="leftright" id="prevWebButton"></button>
-        <button class="leftright" id="nextWebButton"></button>
-        <div class="wrapper" id="webWrapper">
-          <div class="project" id="webProject">
-            <div class="projectTitle">MELANGE-2025</div>
-            <div class="projectImage">
-              <img class="picture" src="./images/melange.png">
-            </div>
-            <div class="projectSoftware">
-              <img class="projectIcon" src="./icons/HTML.png">
-              <img class="projectIcon" src="./icons/CSS.png">
-              <img class="projectIcon" src="./icons/JavaScript.png">
-              <img class="projectIcon" src="./icons/React.png">
-           
-            </div>
-            <div class="projectDes">
-              
-              <a class="seemoreButton" href="https://github.com/darkdevil3610/MELANGE-2025" target="_blank">
-                <div class="seemore">&lt; Front-end &gt;</div>
-              </a>
-            </div>
+    <section id="section3" class="projectSection" aria-labelledby="web-projects-heading">
+      <h2 class="secPortTit" id="web-projects-heading">Recent Web Projects</h2>
+      <p class="secPortDes">Take a look at what I have built.</p>
+      <div class="projectGrid">
+        <article class="project" aria-labelledby="melange-title">
+          <h3 class="projectTitle" id="melange-title">MELANGE-2025</h3>
+          <div class="projectImage">
+            <img class="picture" src="./images/melange.png" alt="MELANGE 2025 website preview" loading="lazy" decoding="async">
           </div>
-          
-          
-          
-          <div class="project" id="webProject">
-            <div class="projectTitle">NpmJaagratha</div>
-            <div class="projectImage">
-              <img class="picture" src="./images/npmjaagratha.png">
-            </div>
-            <div class="projectSoftware">
-              <img class="projectIcon" src="./icons/NextJS.png">
-              <img class="projectIcon" src="./icons/TypeScript.png">
-              <img class="projectIcon" src="./icons/React.png">
-            </div>
-            <div class="projectDes">
-              <a class="seemoreButton" href="#"
-                target="_blank">
-                <div class="seemore">&lt; No Back-end &gt;</div>
-              </a>
-              <a class="seemoreButton" href="https://npmjaagratha.qzz.io/"
-                target="_blank">
-                <div class="seemore">&lt; Front-end &gt;</div>
-              </a>
-            </div>
+          <p class="projectSummary">Front-end website for MELANGE 2025.</p>
+          <div class="projectSoftware" aria-label="Technologies">
+            <img class="projectIcon" src="./icons/HTML.png" alt="HTML" loading="lazy">
+            <img class="projectIcon" src="./icons/CSS.png" alt="CSS" loading="lazy">
+            <img class="projectIcon" src="./icons/JavaScript.png" alt="JavaScript" loading="lazy">
+            <img class="projectIcon" src="./icons/React.png" alt="React" loading="lazy">
           </div>
-        </div>
-        <div class="dotIndex">
-          <div class="dot" id="dotWeb"></div>
-          <div class="dot" id="dotWeb"></div>
-        </div>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://github.com/darkdevil3610/MELANGE-2025" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">View source</span>
+            </a>
+          </div>
+        </article>
+        <article class="project" aria-labelledby="npmjaagratha-title">
+          <h3 class="projectTitle" id="npmjaagratha-title">NpmJaagratha</h3>
+          <div class="projectImage">
+            <img class="picture" src="./images/npmjaagratha.png" alt="NpmJaagratha dependency security dashboard" loading="lazy" decoding="async">
+          </div>
+          <p class="projectSummary">A security dashboard for checking npm dependencies.</p>
+          <div class="projectSoftware" aria-label="Technologies">
+            <img class="projectIcon" src="./icons/NextJS.png" alt="Next.js" loading="lazy">
+            <img class="projectIcon" src="./icons/TypeScript.png" alt="TypeScript" loading="lazy">
+            <img class="projectIcon" src="./icons/React.png" alt="React" loading="lazy">
+          </div>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://npmjaagratha.qzz.io/" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">Visit website</span>
+            </a>
+          </div>
+        </article>
+        <article class="project" aria-labelledby="medappuram-title">
+          <h3 class="projectTitle" id="medappuram-title">Medappuram General Store</h3>
+          <div class="projectImage">
+            <img class="picture" src="./images/medappuram-store.webp" alt="Medappuram General Store website with grocery prices and product catalogue" width="960" height="540" loading="lazy" decoding="async">
+          </div>
+          <p class="projectSummary">Browse groceries, check prices, and build an order to send on WhatsApp.</p>
+          <div class="projectSoftware">
+            <span class="projectTag">Product catalogue</span>
+            <span class="projectTag">WhatsApp orders</span>
+          </div>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://medappuram-store.vercel.app/" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">Visit website</span>
+            </a>
+          </div>
+        </article>
       </div>
-      <a href="#section4" class="nextButton2" id="content4">
+      <a href="#section4" class="nextButton2" aria-label="Go to AI and Automation Projects">
         <span class="next"></span>
         <span class="next"></span>
         <span class="next"></span>
       </a>
     </section>
-    <section id="section4">
-      <div class="secPortTit" id="content1">AI and Automation Projects</div>
-      <div class="secPortDes" id="content2">Here are a few projects I'm proud of.</div>
-      <div class="secPortFrame" id="content3">
-        <button class="leftright" id="prevGameButton"></button>
-        <button class="leftright" id="nextGameButton"></button>
-        <div class="wrapper" id="gameWrapper">
-          <div class="project" id="gameProject">
-            <div class="projectTitle">Student-Career-Assistant-Agent</div>
+    <section id="section4" class="projectSection" aria-labelledby="ai-projects-heading">
+      <h2 class="secPortTit" id="ai-projects-heading">AI and Automation Projects</h2>
+      <p class="secPortDes">Here are a few projects I'm proud of.</p>
+      <div class="projectGrid">
+        <article class="project" aria-labelledby="student-agent-title">
+          <h3 class="projectTitle" id="student-agent-title">Student Career Assistant Agent</h3>
+          <div class="projectGallery" aria-label="Student Career Assistant previews">
             <div class="projectImage">
               <div class="imageWrap">
-                <img class="picture"
-                  src="./images/python_script.png">
-                <img class="picture"
-                  src="./images/student_agent.png">
+                <img class="picture" src="./images/python_script.png" alt="Student Career Assistant running in the terminal" loading="lazy" decoding="async">
+                <img class="picture" src="./images/student_agent.png" alt="Student Career Assistant project illustration" loading="lazy" decoding="async">
               </div>
             </div>
-            <div class="imgIndex">
-              <div class="imgButton" id="prevImg"></div>
-              <div class="dotGroup">
-                <div class="dotImg is-focus"></div>
-                <div class="dotImg"></div>
-                <div class="dotImg"></div>
-              </div>
-              <div class="imgButton" id="nextImg"></div>
-            </div>
-            <div class="projectSecret" id="secret1"></div>
-            <div class="projectDes">
-              <a class="seemoreButton" href="https://github.com/darkdevil3610/Student-Career-Assistant-Agent" target="_blank">
-                <div class="seemore">&lt; More details &gt;</div>
-              </a>
+            <div class="imgIndex" hidden>
+              <button class="imgButton prevImg" type="button" aria-label="Previous Student Career Assistant image"></button>
+              <span class="imageCount" aria-live="polite" aria-atomic="true">1 / 2</span>
+              <button class="imgButton nextImg" type="button" aria-label="Next Student Career Assistant image"></button>
             </div>
           </div>
-
-          <div class="project" id="gameProject">
-            <div class="projectTitle">WA BOT</div>
-            <div class="projectImage">
-              <div class="imageWrap">
-                <img class="picture"
-                  src="">
-               
-              </div>
-            </div>
-            
-            <div class="projectSecret" id="secret3"></div>
-            <div class="projectDes">
-              <a class="seemoreButton" href="https://github.com/darkdevil3610/GOURAV-BOT" target="_blank">
-                <div class="seemore">&lt; More details &gt;</div>
-              </a>
-            </div>
+          <p class="projectSummary">An AI assistant for student career guidance.</p>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://github.com/darkdevil3610/Student-Career-Assistant-Agent" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">More details</span>
+            </a>
           </div>
-          <div class="project" id="gameProject">
-           
-        <div class="dotIndex">
-          <div class="dot" id="dotGame"></div>
-          <div class="dot" id="dotGame"></div>
-          <div class="dot" id="dotGame"></div>
-          <div class="dot" id="dotGame"></div>
-        </div>
+        </article>
+        <article class="project" aria-labelledby="wa-bot-title">
+          <h3 class="projectTitle" id="wa-bot-title">WA BOT</h3>
+          <div class="projectImage projectPlaceholder">
+            <img src="./icons/icon-whatsapp-50.png" alt="" width="50" height="50" loading="lazy">
+            <strong>WhatsApp automation</strong>
+            <span>Bot project</span>
+          </div>
+          <p class="projectSummary">A WhatsApp bot project for chat automation.</p>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://github.com/darkdevil3610/GOURAV-BOT" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">More details</span>
+            </a>
+          </div>
+        </article>
+        <article class="project" aria-labelledby="ai-collection-title">
+          <h3 class="projectTitle" id="ai-collection-title">100+ Artificial Intelligence Projects</h3>
+          <div class="projectImage projectPlaceholder">
+            <img src="./icons/Python.png" alt="" width="50" height="50" loading="lazy">
+            <strong>100+ AI projects</strong>
+            <span>Machine learning · Computer vision · NLP</span>
+          </div>
+          <p class="projectSummary">A collection of machine learning, deep learning, computer vision, and NLP projects.</p>
+          <div class="projectDes">
+            <a class="seemoreButton" href="https://github.com/darkdevil3610/100-AI-Machine-learning-Deep-learning-Computer-vision-NLP" target="_blank" rel="noopener noreferrer">
+              <span class="seemore">More details</span>
+            </a>
+          </div>
+        </article>
       </div>
-          <div class="project" id="gameProject">
-            <div class="projectTitle">100 + 𝗔𝗿𝘁𝗶𝗳𝗶𝗰𝗶𝗮𝗹 𝗜𝗻𝘁𝗲𝗹𝗹𝗶𝗴𝗲𝗻𝗰𝗲 𝗣𝗿𝗼𝗷𝗲𝗰𝘁</div>
-            <div class="projectImage">
-              <div class="imageWrap">
-                <img class="picture"
-                  src="">
-               
-              </div>
-            </div>
-            
-            <div class="projectSecret" id="secret3"></div>
-            <div class="projectDes">
-              <a class="seemoreButton" href="https://github.com/darkdevil3610/100-AI-Machine-learning-Deep-learning-Computer-vision-NLP" target="_blank">
-                <div class="seemore">&lt; More details &gt;</div>
-              </a>
-            </div>
-          </div>
-        </div>
-        
-          
-      <a href="#section5" class="nextButton2" id="content4">
+      <a href="#section5" class="nextButton2" aria-label="Go to Milestones and Achievements">
         <span class="next"></span>
         <span class="next"></span>
         <span class="next"></span>
@@ -331,7 +307,7 @@
     </div>
     <a href="#section1" class="moveUp"></a>
   </footer>
-  <script type="module" src="./index.js?v=20260404"></script>
+  <script type="module" src="./index.js?v=20261106"></script>
 </body>
 
 </html>
