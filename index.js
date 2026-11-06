@@ -331,13 +331,16 @@ function onWindowResize() {
   renderer.setSize(sizes.width, sizes.height);
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
-  scheduleActiveSectionUpdate();
+  measureSections();
 }
 window.addEventListener("resize", onWindowResize, false);
 
 //MOUSE EVENT
 const mouse = new THREE.Vector2();
 function onMouseMove(event) {
+  if (reducedMotion.matches) {
+    return;
+  }
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = (event.clientY / window.innerHeight) * 2 + 1;
   //Update airplane
@@ -349,6 +352,9 @@ window.addEventListener("mousemove", onMouseMove, false);
 
 //TOUCH EVENT FOR MOBILE
 function onTouchMove(event) {
+  if (reducedMotion.matches) {
+    return;
+  }
   mouse.x = (event.changedTouches[0].clientX / window.innerWidth) * 2 - 1;
   mouse.y = (event.changedTouches[0].clientY / window.innerHeight) * 2 + 1;
   //Update airplane
@@ -358,35 +364,101 @@ function onTouchMove(event) {
 }
 window.addEventListener("touchmove", onTouchMove, false);
 
-//REVEAL SECTIONS ONCE
+//SCROLL CHAPTERS
 const main = document.querySelector("main");
 const sections = main.querySelectorAll("section");
-if ("IntersectionObserver" in window) {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { root: main, rootMargin: "0px", threshold: 0 });
-  sections.forEach((section) => observer.observe(section));
-} else {
-  sections.forEach((section) => section.classList.add("is-visible"));
-}
-
-//UPDATE ACTIVE SECTION AT THE VIEWPORT READING LINE
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const sectionConfigs = [
+  { stars: black, top: yellow, back: red, rect: purple, cam: [-0.3, 0, 5] },
+  { stars: black, top: green, back: yellow, rect: purple, cam: [-0.55, 0, 5] },
+  { stars: black, top: cyan, back: purple, rect: blue, cam: [-0.1, 0, 5] },
+  { stars: black, top: red, back: purple, rect: blue, cam: [-0.1, 0, 5] },
+  { stars: 0x101010, top: yellow, back: cyan, rect: purple, cam: [-0.2, 0, 5] },
+  { stars: 0x545454, top: black, back: black, rect: black, cam: [0, -4.5, 10] },
+].map((config) => ({
+  stars: new THREE.Color(config.stars),
+  top: new THREE.Color(config.top),
+  back: new THREE.Color(config.back),
+  rect: new THREE.Color(config.rect),
+  cam: new THREE.Vector3(...config.cam),
+}));
+const starColor = new THREE.Color(black);
+let sectionOffsets = [];
 let activeSectionIndex = 0;
 let activeSectionFrame = null;
-function updateActiveSection() {
-  activeSectionFrame = null;
-  const readingLine = main.getBoundingClientRect().top + main.clientHeight * 0.35;
-  activeSectionIndex = 0;
-  sections.forEach((section, index) => {
-    if (section.getBoundingClientRect().top <= readingLine) {
-      activeSectionIndex = index;
+let entranceAnimations = [];
+
+function measureSections() {
+  const mainTop = main.getBoundingClientRect().top;
+  sectionOffsets = Array.from(sections, (section) => (
+    section.getBoundingClientRect().top - mainTop + main.scrollTop
+  ));
+  scheduleActiveSectionUpdate();
+}
+function playSectionEntrance(section) {
+  entranceAnimations.forEach((animation) => animation.cancel());
+  entranceAnimations = [];
+  if (reducedMotion.matches) {
+    return;
+  }
+  const items = section.querySelectorAll(
+    ':scope > [id^="content"], :scope > .secPortTit, :scope > .secPortDes, :scope > .nextButton2, .projectGrid > .project'
+  );
+  items.forEach((item, index) => {
+    if (typeof item.animate === "function") {
+      entranceAnimations.push(item.animate([
+        { opacity: 0.35, translate: "0 40px" },
+        { opacity: 1, translate: "0 0" },
+      ], {
+        duration: 700,
+        delay: Math.min(index * 90, 450),
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        fill: "backwards",
+      }));
     }
   });
+}
+
+//HOLD THE SCENE WITHIN A CHAPTER, BLEND AT ITS NEXT BOUNDARY
+function updateActiveSection() {
+  activeSectionFrame = null;
+  const viewportHeight = main.clientHeight;
+  const readingLine = main.scrollTop + viewportHeight * 0.35;
+  activeSectionIndex = 0;
+  let sceneIndex = 0;
+  sectionOffsets.forEach((offset, index) => {
+    if (offset <= readingLine) {
+      activeSectionIndex = index;
+    }
+    if (offset <= main.scrollTop) {
+      sceneIndex = index;
+    }
+  });
+  const nextIndex = Math.min(sceneIndex + 1, sectionConfigs.length - 1);
+  const nextTop = sectionOffsets[nextIndex] - main.scrollTop;
+  let progress = nextIndex === sceneIndex ? 0 : THREE.MathUtils.clamp(
+    (viewportHeight * 0.8 - nextTop) / (viewportHeight * 0.65), 0, 1
+  );
+  progress = progress * progress * (3 - 2 * progress);
+  const current = sectionConfigs[reducedMotion.matches ? activeSectionIndex : sceneIndex];
+  const next = reducedMotion.matches ? current : sectionConfigs[nextIndex];
+  updateCamPos.lerpVectors(current.cam, next.cam, progress);
+  lightTopColor.lerpColors(current.top, next.top, progress);
+  lightBackColor.lerpColors(current.back, next.back, progress);
+  rectLightColor.lerpColors(current.rect, next.rect, progress);
+  starColor.lerpColors(current.stars, next.stars, progress);
+
+  const sectionNumber = activeSectionIndex + 1;
+  if (sectionNumber !== staticSectionNumber) {
+    highLightNavLink(sectionNumber);
+    highLightHamburger(sectionNumber);
+    changeFooter(sectionNumber);
+    playSectionEntrance(sections[activeSectionIndex]);
+    staticSectionNumber = sectionNumber;
+  }
+  if (reducedMotion.matches && !document.hidden) {
+    animate(performance.now());
+  }
 }
 function scheduleActiveSectionUpdate() {
   if (activeSectionFrame === null) {
@@ -395,8 +467,15 @@ function scheduleActiveSectionUpdate() {
 }
 main.addEventListener("scroll", scheduleActiveSectionUpdate, { passive: true });
 window.addEventListener("hashchange", scheduleActiveSectionUpdate);
-window.addEventListener("load", scheduleActiveSectionUpdate);
-window.addEventListener("pageshow", scheduleActiveSectionUpdate);
+window.addEventListener("load", measureSections);
+window.addEventListener("pageshow", measureSections);
+if ("ResizeObserver" in window) {
+  const sectionObserver = new ResizeObserver(measureSections);
+  sections.forEach((section) => sectionObserver.observe(section));
+}
+if (document.fonts) {
+  document.fonts.ready.then(measureSections);
+}
 
 //EXPAND NAVBAR HAMBURGER
 const hamburger = document.querySelector(".hamburger");
@@ -406,6 +485,7 @@ function setMenuOpen(open) {
   hamburger.classList.toggle("is-active", open);
   hamburger.setAttribute("aria-expanded", String(open));
   subMenu.style.display = open ? "flex" : "";
+  highLightHamburger(activeSectionIndex + 1);
 }
 hamburger.addEventListener("click", function() {
   setMenuOpen(!this.classList.contains("is-active"));
@@ -474,19 +554,6 @@ document.querySelectorAll(".projectGallery").forEach((gallery) => {
   controls.hidden = false;
 });
 
-//BUTTON BACK TO TOP
-document
-  .querySelector(".backToTop")
-  .addEventListener("click", function(event) {
-    highLightNavLink(1);
-    changeFooter(1);
-    toggleStars(black);
-    lightTopColor.setHex(yellow);
-    lightBackColor.setHex(red);
-    rectLightColor.setHex(purple);
-    updateCamPos.set(-0.3, 0, 5);
-});
-
 //SOUND TOGGLE
 const backgroundSound = new Audio("./audios/Gratitude_Spiritual-Moment.mp3");
 let soundOn = false;
@@ -525,6 +592,7 @@ function highLightNavLink(number) {
     each.style.color = "beige";
     each.style.fontStyle = "normal";
     each.classList.remove("is-on");
+    each.removeAttribute("aria-current");
   });
   hamburgerLine.forEach((each) => {
     each.style.backgroundColor = "beige";
@@ -536,11 +604,13 @@ function highLightNavLink(number) {
       navLinks[desktopIndex].style.color = "goldenrod";
       navLinks[desktopIndex].style.fontStyle = "italic";
       navLinks[desktopIndex].classList.add("is-on");
+      navLinks[desktopIndex].setAttribute("aria-current", "location");
     }
     if (navLinks[mobileIndex]) {
       navLinks[mobileIndex].style.color = "goldenrod";
       navLinks[mobileIndex].style.fontStyle = "italic";
       navLinks[mobileIndex].classList.add("is-on");
+      navLinks[mobileIndex].setAttribute("aria-current", "location");
     }
     const lineIndex = Math.min(desktopIndex, hamburgerLine.length - 1);
     if (lineIndex >= 0) {
@@ -553,6 +623,11 @@ function highLightHamburger(number) {
   hamburgerLine.forEach((each) => {
     each.style.backgroundColor = "beige";
   });
+  if (hamburger.classList.contains("is-active")) {
+    hamburgerLine[0].style.backgroundColor = "goldenrod";
+    hamburgerLine[3].style.backgroundColor = "goldenrod";
+    return;
+  }
   if (number > 1) {
     const lineIndex = Math.min(number - 2, hamburgerLine.length - 1);
     if (lineIndex >= 0) {
@@ -579,16 +654,15 @@ function changeFooter(setting) {
     document.querySelector(".moveUp").style.display = "none";
   }
 }
-//Change stars color
-function toggleStars(color) {
-  starGroup.children.forEach((each) => {
-    each.material.color.setHex(color);
-  })
-}
-
-
 //ANIMATION
-const animate = () => {
+let animationFrame = null;
+let previousFrameTime = performance.now();
+const animate = (now = performance.now()) => {
+  animationFrame = null;
+  const deltaTime = Math.min(Math.max((now - previousFrameTime) / 1000, 0), 1 / 30);
+  previousFrameTime = now;
+  const blend = reducedMotion.matches ? 1 : 1 - Math.exp(-10 * deltaTime);
+  if (!reducedMotion.matches) {
   //Scene1
   //Particles spin around
   particlesGroup.rotation.y += 0.004;
@@ -649,87 +723,48 @@ const animate = () => {
   //Move airplane follow mouse
   airPlaneGroup.position.lerp(airPlaneNewPos, 0.1);
 
-  //Apply the tracked section to the scene
-  const sectionConfigs = [
-    {
-      stars: null,
-      top: yellow,
-      back: red,
-      rect: purple,
-      cam: [-0.3, 0, 5],
-    },
-    {
-      stars: black,
-      top: green,
-      back: yellow,
-      rect: purple,
-      cam: [-0.55, 0, 5],
-    },
-    {
-      stars: black,
-      top: cyan,
-      back: purple,
-      rect: blue,
-      cam: [-0.1, 0, 5],
-    },
-    {
-      stars: black,
-      top: red,
-      back: purple,
-      rect: blue,
-      cam: [-0.1, 0, 5],
-    },
-    {
-      stars: 0x101010,
-      top: yellow,
-      back: cyan,
-      rect: purple,
-      cam: [-0.2, 0, 5],
-    },
-    {
-      stars: 0x545454,
-      top: black,
-      back: black,
-      rect: black,
-      cam: [0, -4.5, 10],
-    },
-  ];
-
-  if (activeSectionIndex >= 0 && activeSectionIndex < sectionConfigs.length) {
-    const sectionNumber = activeSectionIndex + 1;
-    if (sectionNumber !== staticSectionNumber) {
-      const config = sectionConfigs[activeSectionIndex];
-      highLightNavLink(sectionNumber);
-      highLightHamburger(sectionNumber);
-      changeFooter(sectionNumber);
-      if (config.stars !== null) {
-        toggleStars(config.stars);
-      }
-      lightTopColor.setHex(config.top);
-      lightBackColor.setHex(config.back);
-      rectLightColor.setHex(config.rect);
-      updateCamPos.set(config.cam[0], config.cam[1], config.cam[2]);
-      staticSectionNumber = sectionNumber;
-    }
-  }
-
-  //Update hamburger arrow
-  if (hamburger.classList.contains("is-active")) {
-    hamburgerLine[0].style.backgroundColor = "goldenrod";
-    hamburgerLine[3].style.backgroundColor = "goldenrod";
-  } else {
-    highLightHamburger(staticSectionNumber);
   }
 
   //Update screen
-  camera.position.lerp(updateCamPos, 0.05);
-  lightTop.color.lerp(lightTopColor, 0.05);
-  lightBack.color.lerp(lightBackColor, 0.05);
-  rectLight.color.lerp(rectLightColor, 0.05);
+  camera.position.lerp(updateCamPos, blend);
+  lightTop.color.lerp(lightTopColor, blend);
+  lightBack.color.lerp(lightBackColor, blend);
+  rectLight.color.lerp(rectLightColor, blend);
+  starGroup.children.forEach((star) => star.material.color.lerp(starColor, blend));
 
   renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  if (!reducedMotion.matches && !document.hidden) {
+    animationFrame = requestAnimationFrame(animate);
+  }
 };
+function resumeAnimation() {
+  previousFrameTime = performance.now();
+  if (!document.hidden && animationFrame === null) {
+    animate(previousFrameTime);
+  }
+}
+canvas.addEventListener("webglcontextrestored", resumeAnimation);
+reducedMotion.addEventListener("change", () => {
+  entranceAnimations.forEach((animation) => animation.cancel());
+  if (animationFrame !== null) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+  updateActiveSection();
+  if (!reducedMotion.matches) {
+    resumeAnimation();
+  }
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (animationFrame !== null) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+  } else {
+    resumeAnimation();
+  }
+});
 
 Array(30).fill().forEach(generateCube);
 Array(200).fill().forEach(generateParticle);
@@ -737,5 +772,6 @@ generateEarth();
 Array(60).fill().forEach(generateCloud);
 Array(80).fill().forEach(generateStar);
 generateAirPlane();
+measureSections();
 updateActiveSection();
-animate();
+resumeAnimation();
