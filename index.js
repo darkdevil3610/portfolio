@@ -81,8 +81,9 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
   alpha: true,
 });
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+let rendererPixelRatio = Math.min(window.devicePixelRatio, 1.5);
+renderer.setPixelRatio(rendererPixelRatio);
+renderer.setSize(sizes.width, sizes.height, false);
 renderer.setClearAlpha(0);
 renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -323,17 +324,34 @@ function generateAirPlane() {
 }
 
 //RESIZE WINDOW
-function onWindowResize() {
-  //Update Sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-  //Update Camera
-  renderer.setSize(sizes.width, sizes.height);
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-  measureSections();
+let measureFrame = null;
+function scheduleMeasureSections() {
+  if (measureFrame === null) {
+    measureFrame = requestAnimationFrame(() => {
+      measureFrame = null;
+      measureSections();
+    });
+  }
 }
-window.addEventListener("resize", onWindowResize, false);
+function onWindowResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  if (width === sizes.width && height === sizes.height) {
+    return;
+  }
+  sizes.width = width;
+  sizes.height = height;
+  const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
+  if (pixelRatio !== rendererPixelRatio) {
+    rendererPixelRatio = pixelRatio;
+    renderer.setPixelRatio(pixelRatio);
+  }
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  scheduleMeasureSections();
+}
+window.addEventListener("resize", onWindowResize, { passive: true });
 
 //MOUSE EVENT
 const mouse = new THREE.Vector2();
@@ -362,7 +380,7 @@ function onTouchMove(event) {
   airPlaneNewPos.y = - (event.changedTouches[0].clientY * 1.6 / window.innerHeight) - 4.2;
   airPlaneGroup.rotation.z = airPlaneGroup.rotation.x = airPlaneNewPos.y - airPlaneGroup.position.y;
 }
-window.addEventListener("touchmove", onTouchMove, false);
+window.addEventListener("touchmove", onTouchMove, { passive: true });
 
 //SCROLL CHAPTERS
 const main = document.querySelector("main");
@@ -386,7 +404,18 @@ const starColor = new THREE.Color(black);
 let sectionOffsets = [];
 let activeSectionIndex = 0;
 let activeSectionFrame = null;
-let entranceAnimations = [];
+let lastScrollTop = 0;
+let scrollIdleTimer = null;
+const sectionVisibilityObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle("is-offscreen", !entry.isIntersecting);
+      });
+    }, { root: main, rootMargin: "20% 0px", threshold: 0 })
+  : null;
+if (sectionVisibilityObserver) {
+  sections.forEach((section) => sectionVisibilityObserver.observe(section));
+}
 
 function measureSections() {
   const mainTop = main.getBoundingClientRect().top;
@@ -395,47 +424,43 @@ function measureSections() {
   ));
   scheduleActiveSectionUpdate();
 }
-function playSectionEntrance(section) {
-  entranceAnimations.forEach((animation) => animation.cancel());
-  entranceAnimations = [];
-  if (reducedMotion.matches) {
-    return;
-  }
-  const items = section.querySelectorAll(
-    ':scope > [id^="content"], :scope > .secPortTit, :scope > .secPortDes, :scope > .nextButton2, .projectGrid > .project'
-  );
-  items.forEach((item, index) => {
-    if (typeof item.animate === "function") {
-      entranceAnimations.push(item.animate([
-        { opacity: 0.35, translate: "0 40px" },
-        { opacity: 1, translate: "0 0" },
-      ], {
-        duration: 700,
-        delay: Math.min(index * 90, 450),
-        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-        fill: "backwards",
-      }));
-    }
-  });
-}
 
 //HOLD THE SCENE WITHIN A CHAPTER, BLEND AT ITS NEXT BOUNDARY
 function updateActiveSection() {
   activeSectionFrame = null;
   const viewportHeight = main.clientHeight;
-  const readingLine = main.scrollTop + viewportHeight * 0.35;
-  activeSectionIndex = 0;
+  const scrollTop = main.scrollTop;
+  const scrollDirection = Math.sign(scrollTop - lastScrollTop);
+  const readingLine = scrollTop + viewportHeight * 0.35;
+  const chapterDeadZone = Math.min(viewportHeight * 0.06, 48);
+  let nextActiveSectionIndex = 0;
   let sceneIndex = 0;
   sectionOffsets.forEach((offset, index) => {
     if (offset <= readingLine) {
-      activeSectionIndex = index;
+      nextActiveSectionIndex = index;
     }
-    if (offset <= main.scrollTop) {
+    if (offset <= scrollTop) {
       sceneIndex = index;
     }
   });
+  if (staticSectionNumber === 0) {
+    activeSectionIndex = nextActiveSectionIndex;
+  } else if (
+    nextActiveSectionIndex > activeSectionIndex &&
+    scrollDirection >= 0 &&
+    readingLine >= sectionOffsets[nextActiveSectionIndex] + chapterDeadZone
+  ) {
+    activeSectionIndex = nextActiveSectionIndex;
+  } else if (
+    nextActiveSectionIndex < activeSectionIndex &&
+    scrollDirection <= 0 &&
+    readingLine <= sectionOffsets[activeSectionIndex] - chapterDeadZone
+  ) {
+    activeSectionIndex = nextActiveSectionIndex;
+  }
+  lastScrollTop = scrollTop;
   const nextIndex = Math.min(sceneIndex + 1, sectionConfigs.length - 1);
-  const nextTop = sectionOffsets[nextIndex] - main.scrollTop;
+  const nextTop = sectionOffsets[nextIndex] - scrollTop;
   let progress = nextIndex === sceneIndex ? 0 : THREE.MathUtils.clamp(
     (viewportHeight * 0.8 - nextTop) / (viewportHeight * 0.65), 0, 1
   );
@@ -453,7 +478,6 @@ function updateActiveSection() {
     highLightNavLink(sectionNumber);
     highLightHamburger(sectionNumber);
     changeFooter(sectionNumber);
-    playSectionEntrance(sections[activeSectionIndex]);
     staticSectionNumber = sectionNumber;
   }
   if (reducedMotion.matches && !document.hidden) {
@@ -465,16 +489,24 @@ function scheduleActiveSectionUpdate() {
     activeSectionFrame = requestAnimationFrame(updateActiveSection);
   }
 }
-main.addEventListener("scroll", scheduleActiveSectionUpdate, { passive: true });
+function onMainScroll() {
+  document.documentElement.classList.add("is-scrolling");
+  clearTimeout(scrollIdleTimer);
+  scrollIdleTimer = setTimeout(() => {
+    document.documentElement.classList.remove("is-scrolling");
+  }, 140);
+  scheduleActiveSectionUpdate();
+}
+main.addEventListener("scroll", onMainScroll, { passive: true });
 window.addEventListener("hashchange", scheduleActiveSectionUpdate);
-window.addEventListener("load", measureSections);
-window.addEventListener("pageshow", measureSections);
+window.addEventListener("load", scheduleMeasureSections);
+window.addEventListener("pageshow", scheduleMeasureSections);
 if ("ResizeObserver" in window) {
-  const sectionObserver = new ResizeObserver(measureSections);
+  const sectionObserver = new ResizeObserver(scheduleMeasureSections);
   sections.forEach((section) => sectionObserver.observe(section));
 }
 if (document.fonts) {
-  document.fonts.ready.then(measureSections);
+  document.fonts.ready.then(scheduleMeasureSections);
 }
 
 //EXPAND NAVBAR HAMBURGER
@@ -657,11 +689,17 @@ function changeFooter(setting) {
 //ANIMATION
 let animationFrame = null;
 let previousFrameTime = performance.now();
+let geometryFrame = 0;
 const animate = (now = performance.now()) => {
   animationFrame = null;
   const deltaTime = Math.min(Math.max((now - previousFrameTime) / 1000, 0), 1 / 30);
   previousFrameTime = now;
   const blend = reducedMotion.matches ? 1 : 1 - Math.exp(-10 * deltaTime);
+  geometryFrame += 1;
+  const updateGeometry = (
+    !document.documentElement.classList.contains("is-scrolling") ||
+    geometryFrame % 3 === 0
+  );
   if (!reducedMotion.matches) {
   //Scene1
   //Particles spin around
@@ -694,31 +732,34 @@ const animate = (now = performance.now()) => {
   earthGroup.rotation.y -= 0.005;
   
   //Earth wave
-  earthGroup.children[0].geometry.positionData.forEach((p, idx) => {
-    let setNoise = noise(p.x, p.y, p.z, clock.getElapsedTime());
-    wave.copy(p).addScaledVector(p, setNoise);
-    // earth.geometry.attributes.position.setXYZ(idx, wave.x, wave.y, wave.z);
-    earthGroup.children[0].geometry.attributes.position.setY(idx, wave.y);
-  })
-  earthGroup.children[0].geometry.computeVertexNormals();
-  earthGroup.children[0].geometry.attributes.position.needsUpdate = true;
+  if (updateGeometry) {
+    earthGroup.children[0].geometry.positionData.forEach((p, idx) => {
+      const setNoise = noise(p.x, p.y, p.z, clock.getElapsedTime());
+      wave.copy(p).addScaledVector(p, setNoise);
+      earthGroup.children[0].geometry.attributes.position.setY(idx, wave.y);
+    });
+    earthGroup.children[0].geometry.computeVertexNormals();
+    earthGroup.children[0].geometry.attributes.position.needsUpdate = true;
+  }
   
   //Airplane fan
   airPlaneGroup.children[0].rotation.x += 0.3;
   airPlaneGroup.children[1].rotation.x += 0.3;
   
   //Airplane flag
-  for (let i = 0; i < flagVertexCount; i++) {
-    const x = airPlaneGroup.children[2].geometry.attributes.position.getX(i);
-    const y = airPlaneGroup.children[2].geometry.attributes.position.getY(i);
-    const xangle = x + Date.now() / 200;
-    const xsin = Math.sin(xangle) * 0.6;
-    const yangle = y + Date.now() / 200;
-    const ycos = Math.cos(yangle) * 0.1;
-    airPlaneGroup.children[2].geometry.attributes.position.setZ(i, xsin + ycos)
+  if (updateGeometry) {
+    for (let i = 0; i < flagVertexCount; i++) {
+      const x = airPlaneGroup.children[2].geometry.attributes.position.getX(i);
+      const y = airPlaneGroup.children[2].geometry.attributes.position.getY(i);
+      const xangle = x + now / 200;
+      const xsin = Math.sin(xangle) * 0.6;
+      const yangle = y + now / 200;
+      const ycos = Math.cos(yangle) * 0.1;
+      airPlaneGroup.children[2].geometry.attributes.position.setZ(i, xsin + ycos);
+    }
+    airPlaneGroup.children[2].geometry.computeVertexNormals();
+    airPlaneGroup.children[2].geometry.attributes.position.needsUpdate = true;
   }
-  airPlaneGroup.children[2].geometry.computeVertexNormals();
-  airPlaneGroup.children[2].geometry.attributes.position.needsUpdate = true;
 
   //Move airplane follow mouse
   airPlaneGroup.position.lerp(airPlaneNewPos, 0.1);
@@ -745,7 +786,6 @@ function resumeAnimation() {
 }
 canvas.addEventListener("webglcontextrestored", resumeAnimation);
 reducedMotion.addEventListener("change", () => {
-  entranceAnimations.forEach((animation) => animation.cancel());
   if (animationFrame !== null) {
     cancelAnimationFrame(animationFrame);
     animationFrame = null;
